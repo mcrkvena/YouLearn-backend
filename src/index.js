@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors'
 import connect from './db.js'
 import mongo from 'mongodb'
+import storage from './memory_storage.js'
 
 const app = express() 
 const port = 3000
@@ -11,38 +12,39 @@ app.use(express.json())
 
 //GET ALL VIDEOS
 app.get('/videos', async (req, res) => {
-  let db = await connect();
-  let query = req.query;
-  let selection = {};
+    res.json(storage.videos)
+//  let db = await connect();
+//  let query = req.query;
+//  let selection = {};
 
-  if (query._any) {
-    let search = query._any;
-    let terms = search.split(' ');
-    let attributes = ['title', 'postedBy'];
+//  if (query._any) {
+//    let search = query._any;
+//    let terms = search.split(' ');
+//    let attributes = ['title', 'postedBy'];
 
-    selection = {
-      $and: [],
-    };
+//    selection = {
+//      $and: [],
+//    };
 
-    terms.forEach((term) => {
-      let or = {
-        $or: [],
-      };
+//    terms.forEach((term) => {
+//      let or = {
+//        $or: [],
+//      };
 
-      attributes.forEach((attribute) => {
-        or.$or.push({ [attribute]: new RegExp(term) });
-      });
+//      attributes.forEach((attribute) => {
+//        or.$or.push({ [attribute]: new RegExp(term) });
+//      });
+//
+//      selection.$and.push(or);
+//    });
+//  }
+//
+//  console.log('Selection', selection);
 
-      selection.$and.push(or);
-    });
-  }
+//  let cursor = await db.collection('videos').find(selection);
+//  let results = await cursor.toArray();
 
-  console.log('Selection', selection);
-
-  let cursor = await db.collection('videos').find(selection);
-  let results = await cursor.toArray();
-
-  res.json(results);
+//  res.json(results);
 });
 
 //GET A SINGLE VIDEO BY ID
@@ -70,38 +72,39 @@ app.get('/user/:postedBy', async (req, res) => {
 
 //GET ALL FORUM POSTS
 app.get('/forum', async (req, res) => {
-  let db = await connect();
-  let query = req.query;
-  let selection = {};
+    res.json(storage.posts)
+//  let db = await connect();
+//  let query = req.query;
+//  let selection = {};
 
-  if (query._any) {
-    let search = query._any;
-    let terms = search.split(' ');
-    let attributes = ['title'];
+//  if (query._any) {
+//    let search = query._any;
+//    let terms = search.split(' ');
+//    let attributes = ['title'];
 
-    selection = {
-      $and: [],
-    };
+//    selection = {
+//      $and: [],
+//    };
 
-    terms.forEach((term) => {
-      let or = {
-        $or: [],
-      };
+//    terms.forEach((term) => {
+//      let or = {
+//        $or: [],
+//      };
 
-      attributes.forEach((attribute) => {
-        or.$or.push({ [attribute]: new RegExp(term) });
-      });
+//      attributes.forEach((attribute) => {
+//        or.$or.push({ [attribute]: new RegExp(term) });
+//      });
 
-      selection.$and.push(or);
-    });
-  }
+//      selection.$and.push(or);
+//    });
+//  }
 
-  console.log('Selection', selection);
+//  console.log('Selection', selection);
 
-  let cursor = await db.collection('posts').find(selection);
-  let results = await cursor.toArray();
+//  let cursor = await db.collection('posts').find(selection);
+//  let results = await cursor.toArray();
 
-  res.json(results);
+//  res.json(results);
 });
 
 //GET A SINGLE FORUM POST BY ID
