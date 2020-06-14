@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors'
 import connect from './db.js'
 import mongo from 'mongodb'
-import storage from './memory_storage.js'
 
 const app = express() 
 const port = 3000
@@ -12,39 +11,38 @@ app.use(express.json())
 
 //GET ALL VIDEOS
 app.get('/videos', async (req, res) => {
-    res.json(storage.videos)
-//  let db = await connect();
-//  let query = req.query;
-//  let selection = {};
+  let db = await connect();
+  let query = req.query;
+  let selection = {};
 
-//  if (query._any) {
-//    let search = query._any;
-//    let terms = search.split(' ');
-//    let attributes = ['title', 'postedBy'];
+  if (query._any) {
+    let search = query._any;
+    let terms = search.split(' ');
+    let attributes = ['title', 'postedBy'];
 
-//    selection = {
-//      $and: [],
-//    };
+    selection = {
+      $and: [],
+    };
 
-//    terms.forEach((term) => {
-//      let or = {
-//        $or: [],
-//      };
+    terms.forEach((term) => {
+      let or = {
+        $or: [],
+      };
 
-//      attributes.forEach((attribute) => {
-//        or.$or.push({ [attribute]: new RegExp(term) });
-//      });
-//
-//      selection.$and.push(or);
-//    });
-//  }
-//
-//  console.log('Selection', selection);
+      attributes.forEach((attribute) => {
+        or.$or.push({ [attribute]: new RegExp(term) });
+      });
 
-//  let cursor = await db.collection('videos').find(selection);
-//  let results = await cursor.toArray();
+      selection.$and.push(or);
+    });
+  }
 
-//  res.json(results);
+  console.log('Selection', selection);
+
+  let cursor = await db.collection('videos').find(selection).sort({_id:-1});
+  let results = await cursor.toArray();
+
+  res.json(results);
 });
 
 //GET A SINGLE VIDEO BY ID
@@ -72,39 +70,38 @@ app.get('/user/:postedBy', async (req, res) => {
 
 //GET ALL FORUM POSTS
 app.get('/forum', async (req, res) => {
-    res.json(storage.posts)
-//  let db = await connect();
-//  let query = req.query;
-//  let selection = {};
+  let db = await connect();
+  let query = req.query;
+  let selection = {};
 
-//  if (query._any) {
-//    let search = query._any;
-//    let terms = search.split(' ');
-//    let attributes = ['title'];
+  if (query._any) {
+    let search = query._any;
+    let terms = search.split(' ');
+    let attributes = ['title'];
 
-//    selection = {
-//      $and: [],
-//    };
+    selection = {
+      $and: [],
+    };
 
-//    terms.forEach((term) => {
-//      let or = {
-//        $or: [],
-//      };
+    terms.forEach((term) => {
+      let or = {
+        $or: [],
+      };
 
-//      attributes.forEach((attribute) => {
-//        or.$or.push({ [attribute]: new RegExp(term) });
-//      });
+      attributes.forEach((attribute) => {
+        or.$or.push({ [attribute]: new RegExp(term) });
+      });
 
-//      selection.$and.push(or);
-//    });
-//  }
+      selection.$and.push(or);
+    });
+  }
 
-//  console.log('Selection', selection);
+  console.log('Selection', selection);
 
-//  let cursor = await db.collection('posts').find(selection);
-//  let results = await cursor.toArray();
+  let cursor = await db.collection('posts').find(selection).sort({_id:-1});
+  let results = await cursor.toArray();
 
-//  res.json(results);
+  res.json(results);
 });
 
 //GET A SINGLE FORUM POST BY ID
@@ -125,7 +122,7 @@ app.post('/videos', async (req, res) => {
   data.postedAt = new Date().getTime();
   delete data._id;
 
-  if(!data.title || !data.postedBy || !data.source){
+  if(!data.title || !data.postedBy || !data.url){
 
     res.json({
       status: 'fail',
@@ -241,6 +238,106 @@ app.delete('/forum/:id', async (req, res) => {
     _id: mongo.ObjectId(id) 
   })
   res.json("Post deleted!")
+});
+
+//ADD A COMMENT ON A FORUM POST
+app.post('/forum/:postId/comments', async (req, res) => {
+  let db = await connect();
+  let doc = req.body;
+  let postId = req.params.postId;
+  doc._id = mongo.ObjectId();
+  doc.posted_at = Date.now();
+
+  let result = await db.collection('posts').updateOne(
+      { _id: mongo.ObjectId(postId) },
+      {
+          $push: { comments: doc },
+      }
+  );
+  if (result.modifiedCount == 1) {
+      res.json({
+          status: 'success',
+          id: doc._id,
+      });
+  } else {
+      res.statusCode = 500;
+      res.json({
+          status: 'fail',
+      });
+  }
+});
+
+//DELETE A COMMENT ON A FORUM POST
+app.delete('/forum/:postId/comments/:commentId', async (req, res) => {
+  let db = await connect();
+  let postId = req.params.postId;
+  let commentId = req.params.commentId;
+
+  let result = await db.collection('posts').updateOne(
+      { _id: mongo.ObjectId(postId) },
+      {
+          $pull: { comments: { _id: mongo.ObjectId(commentId) } },
+      }
+  );
+  if (result.modifiedCount == 1) {
+      res.statusCode = 201;
+      res.send();
+  } else {
+      res.statusCode = 500;
+      res.json({
+          status: 'fail',
+      });
+  }
+});
+
+//ADD A COMMENT ON A VIDEO
+app.post('/videos/:videoid/comments', async (req, res) => {
+  let db = await connect();
+  let doc = req.body;
+  let videoid = req.params.videoid;
+  doc._id = mongo.ObjectId();
+  doc.posted_at = Date.now();
+
+  let result = await db.collection('videos').updateOne(
+      { _id: mongo.ObjectId(videoid) },
+      {
+          $push: { comments: doc },
+      }
+  );
+  if (result.modifiedCount == 1) {
+      res.json({
+          status: 'success',
+          id: doc._id,
+      });
+  } else {
+      res.statusCode = 500;
+      res.json({
+          status: 'fail',
+      });
+  }
+});
+
+//DELETE A COMMENT ON A VIDEO
+app.delete('/videos/:videoid/comments/:commentId', async (req, res) => {
+  let db = await connect();
+  let videoid = req.params.videoid;
+  let commentId = req.params.commentId;
+
+  let result = await db.collection('videos').updateOne(
+      { _id: mongo.ObjectId(videoid) },
+      {
+          $pull: { comments: { _id: mongo.ObjectId(commentId) } },
+      }
+  );
+  if (result.modifiedCount == 1) {
+      res.statusCode = 201;
+      res.send();
+  } else {
+      res.statusCode = 500;
+      res.json({
+          status: 'fail',
+      });
+  }
 });
 
 app.listen(port, () => console.log(`Using port ${port}!`))

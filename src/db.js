@@ -1,5 +1,5 @@
 import mongo from "mongodb";
-let connection_string = "mongodb+srv://admin:admin@cluster0-1rcff.mongodb.net/test?retryWrites=true&w=majority";
+let connection_string = "mongodb+srv://admin:admin@cluster0-afxcf.mongodb.net/<dbname>?retryWrites=true&w=majority";
 let client = new mongo.MongoClient(connection_string, {
     useNewUrlParser: true,
     useUnifiedTopology: true
