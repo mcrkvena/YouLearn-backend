@@ -131,9 +131,10 @@ app.post('/videos', async (req, res) => {
     return
   }
 
-    let db = await connect();
-    let result = await db.collection("videos").insertOne(data);
-    res.json(data)
+  let db = await connect();
+  let result = await db.collection("videos").insertOne(data);
+
+  res.json(data)
 });
 
 //POST A FORUM POST
@@ -153,65 +154,8 @@ app.post('/forum', async (req, res) => {
 
     let db = await connect();
     let result = await db.collection("posts").insertOne(data);
+
     res.json(data)
-});
-
-//UPDATE A VIDEO
-app.patch('/videos/:id', async (req, res) => {
-  let doc = req.body;
-  delete doc._id;
-  let id = req.params.id;
-  let db = await connect();
-
-  let result = await db.collection('videos').updateOne({
-    _id: mongo.ObjectId(id) 
-  },
-
-  {
-    $set: doc,
-  });
-
-  if (result.modifiedCount == 1) {
-    res.json({
-      status: 'Video updated!',
-      id: result.insertedId,
-    });
-  }
-
-  else {
-    res.json({
-      status: 'Video failed to update!',
-    });
-  }
-});
-
-//UPDATE A FORUM POST
-app.patch('/forum/:id', async (req, res) => {
-  let doc = req.body;
-  delete doc._id;
-  let id = req.params.id;
-  let db = await connect();
-
-  let result = await db.collection('posts').updateOne({
-    _id: mongo.ObjectId(id) 
-  },
-
-  {
-    $set: doc,
-  });
-
-  if (result.modifiedCount == 1) {
-    res.json({
-      status: 'Post updated!',
-      id: result.insertedId,
-    });
-  }
-
-  else {
-    res.json({
-      status: 'Post failed to update!',
-    });
-  }
 });
 
 //DELETE A VIDEO
@@ -224,19 +168,21 @@ app.delete('/videos/:id', async (req, res) => {
   let result = await db.collection('videos').deleteOne({
     _id: mongo.ObjectId(id) 
   })
+
   res.json("Video deleted!")
 });
 
 //DELETE A FORUM POST
-app.delete('/forum/:id', async (req, res) => {
+app.delete('/forum/:postId', async (req, res) => {
   let doc = req.body;
   delete doc._id;
-  let id = req.params.id;
+  let postId = req.params.postId;
   let db = await connect();
 
   let result = await db.collection('posts').deleteOne({
-    _id: mongo.ObjectId(id) 
+    _id: mongo.ObjectId(postId) 
   })
+
   res.json("Post deleted!")
 });
 
@@ -254,11 +200,13 @@ app.post('/forum/:postId/comments', async (req, res) => {
           $push: { comments: doc },
       }
   );
+
   if (result.modifiedCount == 1) {
       res.json({
           status: 'success',
           id: doc._id,
       });
+      
   } else {
       res.statusCode = 500;
       res.json({
@@ -279,9 +227,11 @@ app.delete('/forum/:postId/comments/:commentId', async (req, res) => {
           $pull: { comments: { _id: mongo.ObjectId(commentId) } },
       }
   );
+
   if (result.modifiedCount == 1) {
       res.statusCode = 201;
       res.send();
+
   } else {
       res.statusCode = 500;
       res.json({
@@ -304,11 +254,13 @@ app.post('/videos/:videoid/comments', async (req, res) => {
           $push: { comments: doc },
       }
   );
+
   if (result.modifiedCount == 1) {
       res.json({
           status: 'success',
           id: doc._id,
       });
+
   } else {
       res.statusCode = 500;
       res.json({
@@ -329,9 +281,11 @@ app.delete('/videos/:videoid/comments/:commentId', async (req, res) => {
           $pull: { comments: { _id: mongo.ObjectId(commentId) } },
       }
   );
+
   if (result.modifiedCount == 1) {
       res.statusCode = 201;
       res.send();
+      
   } else {
       res.statusCode = 500;
       res.json({
